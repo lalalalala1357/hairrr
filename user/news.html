@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>最新消息 - 可莉兒 Hair Salon</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+  /* 橫幅公告 */
+  #bannerDisplay {
+    width:100%;
+    background:#ffe08a;
+    color:#333;
+    padding:12px 16px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    position:relative;
+    box-sizing:border-box;
+    font-weight:bold;
+    text-align:center;
+    box-shadow:0 1px 4px rgba(0,0,0,0.15);
+  }
+  #bannerDisplay button {
+    position:absolute;
+    right:16px;
+    background:#4a7c53;
+    color:#fff;
+    border:none;
+    padding:4px 8px;
+    cursor:pointer;
+    border-radius:4px;
+  }
+
+  /* 主內容區 */
+  main {
+    max-width:900px;
+    margin:20px auto;
+    padding:0 20px;
+  }
+  
+  /* 標題靠左對齊 (移除了 text-align: center) */
+  h1 { color:#4a7c53; margin-bottom:20px; }
+
+  article {
+    background:#fff;
+    border-radius:8px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 1px 5px rgba(0,0,0,0.1);
+  }
+  article h3 { margin:0 0 8px; color:#3a6f45; }
+  article time { display:block; font-size:0.85rem; color:#777; margin-bottom:10px; }
+  article p {
+    font-size:1rem;
+    line-height:1.6;
+    color:#444;
+    white-space: pre-wrap;
+  }
+
+  .error { color:red; text-align:center; margin-top:20px; }
+  .hidden { display:none; }
+
+  /* 右下角浮動按鈕 */
+  .fab {
+    position:fixed;
+    right:16px;
+    bottom:16px;
+    background:#7bd8a2;
+    color:#fff;
+    padding:12px 16px;
+    border-radius:999px;
+    text-decoration:none;
+    box-shadow:0 2px 6px rgba(0,0,0,.2);
+    z-index: 1000;
+  }
+  @media (min-width:992px){ .fab{display:none;} }
+</style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+
+<div id="bannerDisplay" class="hidden">
+  <span id="bannerText"></span>
+  <button onclick="document.getElementById('bannerDisplay').style.display='none'">關閉</button>
+</div>
+
+<main>
+  <h1>最新消息</h1>
+  <div id="articles"></div>
+  <div id="error" class="error hidden">公告載入失敗，請稍後再試</div>
+</main>
+
+<div id="footer-placeholder"></div>
+
+<a href="tel:0988528051" class="fab">📞 立即預約</a>
+
+<script src="navbar.js"></script>
+<script src="footer.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCfxDOOzTLbmQRfvW275hJrtOnX_t-6-yc",
+  authDomain: "hsinformation.firebaseapp.com",
+  projectId: "hsinformation",
+  storageBucket: "hsinformation.firebasestorage.app",
+  messagingSenderId: "245515525647",
+  appId: "1:245515525647:web:00bf24514009bddd02cd7a",
+  measurementId: "G-DG6Z64PHF6"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const articlesDiv = document.getElementById("articles");
+const errorDiv = document.getElementById("error");
+const bannerDiv = document.getElementById("bannerDisplay");
+const bannerText = document.getElementById("bannerText");
+
+async function loadBanner(){
+  const doc = await db.collection("banner").doc("main").get();
+  if(doc.exists){
+    const data = doc.data();
+    bannerText.textContent = data.title ? `${data.title}｜${data.content}` : data.content;
+    bannerDiv.classList.remove("hidden");
+  }
+}
+
+async function loadAnnouncements(){
+  articlesDiv.innerHTML = "";
+  errorDiv.classList.add("hidden");
+  try {
+    const snapshot = await db.collection("announcements")
+      .orderBy("createdAt","desc")
+      .get();
+    if(snapshot.empty){
+      articlesDiv.innerHTML = "<p style='text-align:center;'>目前沒有公告</p>";
+      return;
+    }
+    snapshot.forEach(doc=>{
+      const data = doc.data();
+      const article = document.createElement("article");
+      article.innerHTML = `
+        <h3>${data.title}</h3>
+        <time>${data.createdAt?.toDate().toLocaleDateString() || ""}</time>
+        <p>${data.content}</p>
+      `;
+      articlesDiv.appendChild(article);
+    });
+  } catch(e){
+    console.error(e);
+    errorDiv.classList.remove("hidden");
+  }
+}
+
+loadBanner();
+loadAnnouncements();
+</script>
+</body>
+</html>

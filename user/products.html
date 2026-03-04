@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<title>熱銷產品 - 可莉兒 Hair Salon</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+  /* --- 內容間距修正 --- */
+  main { 
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px; 
+  }
+  
+  /* 標題靠左對齊 (移除了 text-align: center) */
+  h1 { color: #4a7c53; margin-bottom: 20px; }
+
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+  }
+  .product-card {
+    background: white; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s; display: flex; flex-direction: column;
+  }
+  .product-card:hover { transform: translateY(-5px); }
+  .product-img { width: 100%; height: 250px; object-fit: cover; background: #eee; }
+  .product-info { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+  .product-title { font-size: 1.2rem; font-weight: bold; color: #4a7c53; margin-bottom: 10px; }
+  .product-desc { font-size: 0.9rem; color: #666; margin-bottom: 15px; line-height: 1.5; flex-grow: 1; white-space: pre-wrap; }
+  .product-price { font-size: 1.1rem; font-weight: bold; color: #e74c3c; margin-bottom: 15px; }
+  .buy-btn {
+    background-color: #4a7c53; color: white; border: none; padding: 12px; width: 100%;
+    border-radius: 5px; cursor: pointer; font-size: 1rem; text-align: center; text-decoration: none; display: block;
+    box-sizing: border-box;
+  }
+  .buy-btn:hover { background-color: #3d6645; }
+  
+  #loading { text-align: center; font-size: 1.2rem; color: #666; margin-top: 50px; }
+</style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+
+<main>
+  <h1>店內嚴選好物</h1>
+  <p style="margin-bottom: 30px; color: #666;">
+    在家也能享受沙龍級護理。歡迎點擊按鈕直接 LINE 我們預留喔！
+  </p>
+
+  <div id="loading">正在載入最新產品...</div>
+  <div class="product-grid" id="productContainer"></div>
+</main>
+
+<div id="footer-placeholder"></div>
+
+<script src="navbar.js"></script>
+<script src="footer.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfxDOOzTLbmQRfvW275hJrtOnX_t-6-yc",
+    authDomain: "hsinformation.firebaseapp.com",
+    projectId: "hsinformation",
+  };
+  
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.firestore();
+
+  const container = document.getElementById('productContainer');
+  const loading = document.getElementById('loading');
+
+  // 讀取產品資料
+  db.collection('products').orderBy('createdAt', 'desc').get().then((querySnapshot) => {
+    loading.style.display = 'none';
+    
+    if (querySnapshot.empty) {
+      container.innerHTML = '<p style="text-align:center; width:100%;">目前沒有上架的產品。</p>';
+      return;
+    }
+
+    querySnapshot.forEach((doc) => {
+      const p = doc.data();
+      const html = `
+        <div class="product-card">
+          <img src="${p.imageUrl}" alt="${p.name}" class="product-img">
+          <div class="product-info">
+            <div class="product-title">${p.name}</div>
+            <div class="product-desc">${p.description}</div>
+            <div class="product-price">NT$ ${p.price}</div>
+            <a href="javascript:void(0)" onclick="orderProduct('${p.name}')" class="buy-btn">
+               LINE 詢問 / 購買
+            </a>
+          </div>
+        </div>
+      `;
+      container.innerHTML += html;
+    });
+  }).catch((error) => {
+    loading.innerText = "載入失敗，請檢查網路連線";
+  });
+
+  function orderProduct(productName) {
+    var lineBaseUrl = "https://line.me/R/oaMessage/@491xwhjb/?";
+    var message = "你好，我在網站上看到【" + productName + "】，我想購買或詢問詳情，請問店裡有現貨嗎？";
+    window.open(lineBaseUrl + encodeURIComponent(message));
+  }
+</script>
+
+</body>
+</html>
